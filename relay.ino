@@ -6,16 +6,21 @@
 #define WAIT_TIME 60
 #define SERIAL_TIMEOUT 5000
 #define SEP " / "
-#define uint unsigned long
 #define ulong unsigned long
 
-ulong epoch = 0;
-uint PIN[N];
-uint INTERVAL[N];
-uint TIME[N];
+#define INTERVAL_FACTOR 86400
+#define INTERVAL_NAME "days"
 
-uint fromByte(byte a, byte b){
-  uint r = sizeof(byte)*a;
+#define TIME_FACTOR 3600
+#define TIME_NAME "hours"
+
+ulong epoch = 0;
+ulong PIN[N];
+ulong INTERVAL[N];
+ulong TIME[N];
+
+ulong fromByte(byte a, byte b){
+  ulong r = sizeof(byte)*a;
   r += b;
   return r;
 }
@@ -29,7 +34,7 @@ void pinConfig(){
 
 void intervalConfig(){
   byte a, b;
-  uint tmp;
+  ulong tmp;
 
   for(int i = 0; i < N; i++){
     a = EEPROM.read(2*i);
@@ -42,7 +47,7 @@ void intervalConfig(){
 
 void timeConfig(){
   byte a, b;
-  uint tmp;
+  ulong tmp;
 
   for(int i = N; i < 2*N; i++){
     a = EEPROM.read(2*i);
@@ -89,18 +94,21 @@ void showConfig(){
 
 
 void setConfig(){
-  uint interval, time;
+  ulong tmp;
   for(int i = 0; i < N; i++){
     Serial.println(i+1);
 
-    Serial.println("Interval (in days)");
-    interval = readSerial();
-    interval *= (uint)86400;
-    if(interval > 0) INTERVAL[i] = interval; 
+    Serial.print("Interval (in ");
+    Serial.print(INTERVAL_NAME);
+    Serial.println(")");
+    tmp = readSerial()*INTERVAL_FACTOR;
+    if(tmp > 0) INTERVAL[i] = tmp; 
 
-    Serial.println("Time On (in minutes)");
-    time = readSerial()*60;
-    if(time > 0) TIME[i] =  time;
+    Serial.print("TimeFrame (in ");
+    Serial.print(TIME_NAME);
+    Serial.println(")");
+    tmp = readSerial()*60;
+    if(tmp > 0) TIME[i] =  tmp;
 
     Serial.println();
   }
@@ -109,8 +117,8 @@ void setConfig(){
   showConfig();
 }
 
-uint readSerial(){
-  uint tmp = 0;
+ulong readSerial(){
+  ulong tmp = 0;
   byte d = 0;
   Serial.println("Write the number. Press Enter to continue or ESC to cancel");
   do{
@@ -125,13 +133,6 @@ uint readSerial(){
         tmp *= 10;
         tmp += (int)d - 48;
       }
-      /*else{
-        Serial.print("WTF: (byte)");
-        Serial.write(d);
-        Serial.print(" (int)");
-        Serial.println(d);
-      } */
-        
     }
   }while(d != 13);
 
@@ -161,7 +162,7 @@ void checkSerial(){
 }
 
 void setRelays(){
-  uint interval, time, delta;
+  ulong interval, time, delta;
   bool r;
   for(int i = 0; i < N; i++){
     interval = INTERVAL[i];
